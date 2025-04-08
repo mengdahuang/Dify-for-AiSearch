@@ -11,7 +11,13 @@ node_modules
 dist
 dist-ssr
 *.local
+config.js
+.env
 public/config.js
+docker-compose.yml
+dockerfile
+.dockerignore
+nginx.conf
 
 
 # Editor directories and files

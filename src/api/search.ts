@@ -2,6 +2,7 @@ import axios from "axios";
 import { generateRandomId } from "../utils/helper";
 import { searchWithSerper } from "./serper"; // 导入serper中的函数
 import { useAppConfigStore } from "../stores/appConfig";
+import { chatgptAPI } from "./chatgpt"; // 导入ChatGPT API
 
 // 搜索类型枚举
 export enum SearchType {
@@ -155,6 +156,7 @@ export interface ChatSession {
   search_type: string;
   timestamp: number;
   answer?: string;
+  model?: string; // 添加模型字段
   files?: Array<{
     id: string;
     name: string;
@@ -266,6 +268,54 @@ function processStreamingSearch(
   onFinish: (sessionData?: ChatSession) => void,
   onError: (error: any) => void
 ) {
+  // 如果是聊天模式，使用ChatGPT API处理
+  if (sessionData.search_type === SearchType.CHAT) {
+    console.log('使用ChatGPT API处理聊天请求，模型:', sessionData.model);
+    searchInProgress = true;
+    
+    // 调用ChatGPT API
+    const { controller, sessionData: updatedSession } = chatgptAPI.streamChat(
+      sessionData.query,
+      {
+        model: sessionData.model, // 使用会话中指定的模型
+        files: sessionData.files
+      },
+      (data) => {
+        // 处理流式数据 - 转换为与DIFY API兼容的格式
+        onData({
+          event: 'message',
+          answer: data.answer || data.text,
+          message_id: data.message_id
+        });
+      },
+      (completedSession) => {
+        // 消息结束事件
+        if (completedSession && completedSession.message_id) {
+          onData({
+            event: 'message_end',
+            message_id: completedSession.message_id
+          });
+        }
+        
+        // 搜索完成
+        searchInProgress = false;
+        currentSearchTask = null;
+        onFinish(completedSession);
+      },
+      (error) => {
+        // 处理错误
+        searchInProgress = false;
+        currentSearchTask = null;
+        onError(error);
+      },
+      sessionData.conversation_id
+    );
+    
+    // 更新当前搜索任务的控制器
+    currentSearchTask = { id: sessionData.id, controller };
+    
+    return;
+  }
   // 创建AbortController用于取消请求
   const controller = new AbortController();
   currentSearchTask = { id: sessionData.id, controller };
@@ -581,6 +631,7 @@ export const searchAPI = {
       search_type: type,
       timestamp: Date.now(),
       answer: "",
+      model: options.model, // 添加模型信息
       files: options.files || [], // 保存文件列表
     };
 
@@ -726,8 +777,25 @@ export const searchAPI = {
       query: query,
       search_type: sessionData.search_type,
       timestamp: Date.now(),
+      model: sessionData.model, // 保持使用相同的模型
     };
 
+    // 如果是聊天模式，直接使用ChatGPT API
+    if (sessionData.search_type === SearchType.CHAT) {
+      console.log('继续聊天使用ChatGPT API，模型:', newSession.model);
+      // 调用流式处理函数，使用ChatGPT API
+      processStreamingSearch(
+        "", // apiUrl不需要，因为在chatgptAPI中已经处理
+        {}, // requestData不需要，因为在chatgptAPI中已经处理
+        newSession,
+        onData,
+        onComplete,
+        onError
+      );
+      return;
+    }
+
+    // 非聊天模式，使用原有的DIFY API
     // 构建请求数据
     const requestData = {
       appKey: appConfig.config.APP_KEY,

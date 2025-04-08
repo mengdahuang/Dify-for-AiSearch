@@ -1,4 +1,4 @@
-// 全局配置文件
+// 全局配置文件 - ChatGPT API版本
 window.APP_CONFIG = {
     APP_NAME: 'TIDE AIQus',
     APP_LOGO: 'https://io.onenov.cn/file/202503022151313.png',
@@ -12,17 +12,20 @@ window.APP_CONFIG = {
     ICP_RECORD: '',
     PUBLIC_SECURITY_FILING_NUMBER: '',
     APP_VERSION: '1.0.0',
-    APP_URL: 'https://api.example.com/v1',  // Dify应用API地址
-    APP_KEY: 'your-dify-app-key',           // Dify应用密钥
+    APP_URL: 'https://api.example.com/v1',  // Dify应用API地址 (非对话模式仍使用)
+    APP_KEY: 'your-dify-app-key',           // Dify应用密钥 (非对话模式仍使用)
     SERPER_APIKEY: 'your-serper-api-key',     // Serper API密钥
-    OPENAI_API_KEY: 'your-openai-api-key',    // OpenAI API密钥
+    OPENAI_API_KEY: 'your-openai-api-key',    // OpenAI API密钥 (必填)
     OPENAI_API_URL: 'https://api.openai.com/v1', // OpenAI API地址
-    SYSTEM_PROMPT: '你是一个有用的AI助手', // 系统提示词
+    SYSTEM_PROMPT: '你是一个有用的AI助手，请用中文回答问题', // 系统提示词
     // ChatGPT模型配置
     CHAT_MODELS: [
         { label: 'GPT-3.5', value: 'gpt-3.5-turbo', default: true },
-        { label: 'GPT-4', value: 'gpt-4' },
-        { label: 'GPT-4 Turbo', value: 'gpt-4-turbo-preview' }
+        { label: 'GPT-4o', value: 'gpt-4o' },
+        { label: 'GPT-4 Turbo', value: 'gpt-4-turbo-preview' },
+        { label: 'Claude 3 Opus', value: 'claude-3-opus-20240229' },
+        { label: 'Claude 3 Sonnet', value: 'claude-3-sonnet-20240229' },
+        { label: 'Claude 3 Haiku', value: 'claude-3-haiku-20240307' }
     ],
     // 搜索选项配置
     SEARCH_OPTIONS: [

@@ -159,15 +159,19 @@
 
     <!-- 输入框 -->
     <div class="py-4" :class="{ 'input-visible': true }">
-      <div class="flex space-x-2 items-center justify-center w-full max-w-7xl mx-auto search-box rounded-xl p-2">
-
-        <a-textarea v-model="followupQuery" placeholder="请输入您的问题..."
-          @keydown.enter.prevent="(event) => handleEnterKey(event)" :auto-size="{ minRows: 2, maxRows: 5 }"
-          allow-clear />
-        <a-button type="primary" shape="circle" @click="handleInputAction" :status="loading ? 'danger' : 'normal'">
-          <icon-loading v-if="loading" />
-          <icon-send v-else />
-        </a-button>
+      <div class="flex flex-col space-y-2 w-full max-w-7xl mx-auto search-box rounded-xl p-2">
+        <!-- 模型选择器 - 仅在对话模式下显示 -->
+        <ModelSelector v-if="searchType === 'chat'" v-model="selectedModel" @change="handleModelChange" />
+        
+        <div class="flex space-x-2 items-center justify-center">
+          <a-textarea v-model="followupQuery" placeholder="请输入您的问题..."
+            @keydown.enter.prevent="(event) => handleEnterKey(event)" :auto-size="{ minRows: 2, maxRows: 5 }"
+            allow-clear />
+          <a-button type="primary" shape="circle" @click="handleInputAction" :status="loading ? 'danger' : 'normal'">
+            <icon-loading v-if="loading" />
+            <icon-send v-else />
+          </a-button>
+        </div>
       </div>
     </div>
 
@@ -197,6 +201,7 @@ import { useAppConfigStore } from '../../stores/appConfig';
 import { useThemeStore } from '../../stores/theme';
 import { Message } from '@arco-design/web-vue';
 import SerperResults from './SerperResults.vue';
+import ModelSelector from '../ModelSelector.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -217,6 +222,25 @@ const props = defineProps({
     default: () => ({})
   }
 });
+
+// 模型选择
+const selectedModel = ref('');
+
+// 在组件挂载时，设置默认模型
+onMounted(() => {
+  if (props.searchType === 'chat') {
+    const defaultModel = appConfig.config.CHAT_MODELS?.find((model: any) => model.default);
+    if (defaultModel) {
+      selectedModel.value = defaultModel.value;
+    }
+  }
+});
+
+// 处理模型变更
+const handleModelChange = (model: string) => {
+  console.log('模型已更改:', model);
+  selectedModel.value = model;
+};
 
 const emit = defineEmits(['resultReady', 'error', 'searchComplete', 'updateQuery']);
 
@@ -363,12 +387,21 @@ const executeSearch = async () => {
 
   // 更新顶部显示的查询内容
   emit('updateQuery', searchQuery);
+  
+  // 获取搜索选项
+  const searchOptions = { ...props.options };
+  
+  // 如果是对话模式，添加模型选择
+  if (props.searchType === 'chat' && selectedModel.value) {
+    searchOptions.model = selectedModel.value;
+    console.log('使用ChatGPT模型:', selectedModel.value);
+  }
 
   // 开始流式搜索
   searchAPI.debouncedStreamSearch(
     searchQuery,
     props.searchType,
-    props.options,
+    searchOptions,
     // 处理接收到的数据
     (data) => {
       if (data.event === 'message') {
@@ -503,6 +536,11 @@ const sendFollowupQuery = () => {
   resultContent.value += `\n\n---\n\n**我的提问**: ${userQuestion}\n\n`;
 
   // 继续对话
+  // 确保传递模型信息
+  if (props.searchType === 'chat' && selectedModel.value && !currentSession.value.model) {
+    currentSession.value.model = selectedModel.value;
+  }
+  
   searchAPI.continueChat(
     currentSession.value,
     userQuestion,

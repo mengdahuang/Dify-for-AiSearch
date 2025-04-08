@@ -32,6 +32,7 @@ declare module 'vue' {
     FileUploader: typeof import('./src/components/upload/FileUploader.vue')['default']
     Footer: typeof import('./src/components/layout/Footer.vue')['default']
     Header: typeof import('./src/components/layout/Header.vue')['default']
+    ModelSelector: typeof import('./src/components/ModelSelector.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBox: typeof import('./src/components/search/SearchBox.vue')['default']
