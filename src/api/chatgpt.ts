@@ -41,6 +41,9 @@ export function processChatGPTStream(
   // 创建AbortController用于取消请求
   const controller = new AbortController();
   
+  // 将fullAnswer提升到更高作用域
+  let fullAnswer = ""; // 存储完整回答
+  
   fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -63,7 +66,7 @@ export function processChatGPTStream(
       // 解码器
       const decoder = new TextDecoder();
       let buffer = ""; // 用于存储未完成的数据块
-      let fullAnswer = ""; // 存储完整回答
+      // fullAnswer已移至外部
 
       // 处理数据流
       function processStream() {
